@@ -1,25 +1,87 @@
 import 'package:flutter/material.dart';
+import 'package:rest_test/Models/newsInfo.dart';
+import 'package:rest_test/services/api_manager.dart';
+import 'package:intl/intl.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key key}) : super(key: key);
-
+class HomePage extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _HomePageState createState() => _HomePageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomePageState extends State<HomePage> {
+  Future<Welcome> _newsModel;
+
+  @override
+  void initState() {
+    _newsModel = ApiManager().getNews();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Rest API',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+        title: Text('News App'),
+      ),
+      body: Container(
+        child: FutureBuilder<Welcome>(
+          future: _newsModel,
+          builder: (context, snapshot) {
+            //if there server produces response with data
+            if (snapshot.hasData) {
+              return ListView.builder(
+                  itemCount: snapshot.data.articles.length,
+                  itemBuilder: (context, index) {
+                    var article = snapshot.data.articles[index];
+                    var formattedTime = DateFormat('dd MMM - HH:mm')
+                        .format(article.publishedAt);
+                    return Container(
+                      height: 100,
+                      margin: const EdgeInsets.all(8),
+                      child: Row(
+                        children: <Widget>[
+                          Card(
+                            clipBehavior: Clip.antiAlias,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: AspectRatio(
+                                aspectRatio: 1,
+                                child: Image.network(
+                                  article.urlToImage,
+                                  fit: BoxFit.cover,
+                                )),
+                          ),
+                          SizedBox(width: 16),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(formattedTime),
+                                Text(
+                                  article.title,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  article.description,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  });
+            } else
+              return Center(child: CircularProgressIndicator());
+          },
         ),
       ),
-      body: Container(),
     );
   }
 }
